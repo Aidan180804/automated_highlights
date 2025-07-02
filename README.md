@@ -1,1 +1,1 @@
-# automated-highlights
+# automatic video highlights
