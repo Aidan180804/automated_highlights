@@ -22,6 +22,7 @@ intervals.rename(columns = {0 : 'start', 1 : 'end'}, inplace=True)
 
 # edit mp4
 from edit_mp4  import extract_video_clips
+from edit_mp4 import merge_and_rename_highlights
 
 input_video = input('enter path to mp4  file')
 output_dir = r'C:\Users\aidan\OneDrive - The University of Nottingham\Documents\auto highlight project\audio files'
