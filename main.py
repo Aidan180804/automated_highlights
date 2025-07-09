@@ -8,11 +8,12 @@ download_youtube_as_mp3(url, output_path)
 
 
 
-
+from loud_sections_from_mp3 import load_audio
+from loud_sections_from_mp3 import get_loud_sections
 
 file_path = input("Enter path to mp3 file: ").strip('""')
 print(f"File path entered: '{file_path}'")
-load_audio(file_path)
+audio = load_audio(file_path)
 intervals = get_loud_sections(audio)
 intervals.rename(columns = {0 : 'start', 1 : 'end'}, inplace=True)
 if not intervals:
