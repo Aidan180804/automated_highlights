@@ -12,7 +12,7 @@ def load_audio(file_path):
     return audio
 
 
-def get_loud_sections(audio, chunk_ms=100, threshold_db=10, interval_sec=5):
+def get_loud_sections(audio, chunk_ms=100, interval_sec=5):
     # Break audio into chunks
     chunks = make_chunks(audio, chunk_ms)
     volumes = np.array([chunk.dBFS for chunk in chunks])
@@ -24,7 +24,7 @@ def get_loud_sections(audio, chunk_ms=100, threshold_db=10, interval_sec=5):
     mean_db = np.mean(valid_volumes)
     std_db = np.std(valid_volumes)
     # Define loud as mean + threshold_db or mean + 2*std
-    loud_threshold = max(mean_db + threshold_db, mean_db + 2*std_db)
+    loud_threshold = mean_db + 2*std_db
     loud_indices = np.where(volumes > loud_threshold)[0]
     # Merge close indices
     merged = []
