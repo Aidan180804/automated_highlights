@@ -20,6 +20,7 @@ intervals = get_loud_sections(audio)
 intervals = pd.DataFrame(intervals)
 intervals.rename(columns = {0 : 'start', 1 : 'end'}, inplace=True)
 
+
 # edit mp4
 from edit_mp4  import extract_video_clips
 from edit_mp4 import merge_and_rename_highlights
