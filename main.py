@@ -6,10 +6,9 @@ url, output_path = ask_for_url()
 download_youtube_as_mp4(url, output_path)
 download_youtube_as_mp3(url, output_path)
 
-
-
 from loud_sections_from_mp3 import load_audio
 from loud_sections_from_mp3 import get_loud_sections
+import pandas as pd
 
 file_path = input("Enter path to mp3 file: ").strip('""')
 print(f"File path entered: '{file_path}'")
