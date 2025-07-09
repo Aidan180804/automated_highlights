@@ -21,8 +21,13 @@ intervals = pd.DataFrame(intervals)
 intervals.rename(columns = {0 : 'start', 1 : 'end'}, inplace=True)
 
 # edit mp4
+from edit_mp4  import extract_video_clips
 
-
+input_video = input('enter path to mp4  file')
+output_dir = r'C:\Users\aidan\OneDrive - The University of Nottingham\Documents\auto highlight project\audio files'
+merged_dir = r'C:\Users\aidan\OneDrive - The University of Nottingham\Documents\auto highlight project'
+extract_video_clips(input_video, output_dir, intervals)
+merge_and_rename_highlights(output_dir, merged_dir)
 
 
 
