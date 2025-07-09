@@ -41,5 +41,7 @@ def download_youtube_as_mp3(url, output_folder):
     with yt_dlp.YoutubeDL(ydl_opts_mp3) as ydl:
         ydl.download([url])
 
+
+ask_for_url()
 download_youtube_as_mp4(url, output_path)
 download_youtube_as_mp3(url, output_path)
