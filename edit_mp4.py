@@ -28,8 +28,10 @@ def merge_and_rename_highlights(output_dir, merged_dir):
     # Create a file list for ffmpeg
     filelist_path = os.path.join(output_dir, 'filelist.txt')
     with open(filelist_path, 'w', encoding='utf-8') as f:
-        for filename in mp4_files:
-            f.write(f"file '{os.path.join(output_dir, filename)}'\n")
+    for filename in mp4_files:
+        abs_path = os.path.abspath(os.path.join(output_dir, filename)).replace('\\', '/')
+        f.write(f"file '{abs_path}'\n")
+
     
     # Output file path
     output_file = os.path.join(merged_dir, 'merged_output.mp4')
