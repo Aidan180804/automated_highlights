@@ -2,6 +2,10 @@ import os
 from moviepy.editor import VideoFileClip
 import subprocess
 
+input_video = input('enter path to mp4  file')
+output_dir = input('enter output directory:').strip('""')
+merged_dir = input('enter merged directory:').strip('""')
+
 # extract highlight clips
 def extract_video_clips(input_video, output_dir, intervals):
     os.makedirs(output_dir, exist_ok=True)
@@ -28,9 +32,9 @@ def merge_and_rename_highlights(output_dir, merged_dir):
     # Create a file list for ffmpeg
     filelist_path = os.path.join(output_dir, 'filelist.txt')
     with open(filelist_path, 'w', encoding='utf-8') as f:
-    for filename in mp4_files:
-        abs_path = os.path.abspath(os.path.join(output_dir, filename)).replace('\\', '/')
-        f.write(f"file '{abs_path}'\n")
+        for filename in mp4_files:
+         abs_path = os.path.abspath(os.path.join(output_dir, filename)).replace('\\', '/')
+         f.write(f"file '{abs_path}'\n")
 
     
     # Output file path
