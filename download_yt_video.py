@@ -7,7 +7,7 @@ def ask_for_url():
     
  url = input('enter youtube video URL:').strip('""')
  file_name = input('enter output file name:').strip('""')
- output_folder = r'C:\Users\aidan\OneDrive - The University of Nottingham\Documents\auto highlight project'
+ output_folder = input('enter output folder:').strip('""')
  output_path = os.path.join(output_folder, file_name + '.%(ext)s')
 
  return url, output_path
