@@ -4,6 +4,9 @@ from pydub.utils import make_chunks
 import pandas as pd
 import os
 
+file_path = input("Enter path to mp3 file: ").strip('""')
+print(f"File path entered: '{file_path}'")
+
 def load_audio(file_path):
     if file_path.lower().endswith('.mp3'):
         audio = AudioSegment.from_mp3(file_path)
@@ -24,7 +27,7 @@ def get_loud_sections(audio, chunk_ms=100, interval_sec=5):
     mean_db = np.mean(valid_volumes)
     std_db = np.std(valid_volumes)
     # Define loud as mean + threshold_db or mean + 2*std
-    loud_threshold = mean_db + 2*std_db
+    loud_threshold = mean_db + 1.5*std_db
     loud_indices = np.where(volumes > loud_threshold)[0]
     # Merge close indices
     merged = []
@@ -62,6 +65,9 @@ def get_loud_sections(audio, chunk_ms=100, interval_sec=5):
 
 
 if __name__ == "__main__":
-    load_audio(file_path)
-    intervals = get_loud_sections(audio)
-
+    try:
+        audio = load_audio(file_path)
+        intervals = get_loud_sections(audio)
+        print("Loud intervals found:", intervals)
+    except Exception as e:
+        print("Error:", e)
