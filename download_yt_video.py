@@ -10,7 +10,7 @@ def ask_for_url():
  output_folder = input('enter output folder:').strip('""')
  output_path = os.path.join(output_folder, file_name + '.%(ext)s')
 
- return url, output_path
+ return url, output_path, output_folder
 
 def download_youtube_as_mp4(url, output_path):
 
@@ -44,6 +44,6 @@ def download_youtube_as_mp3(url, output_path):
 
 
 if __name__ == "__main__":
-    url, output_path = ask_for_url()
+    url, output_path, output_folder = ask_for_url()
     download_youtube_as_mp4(url, output_path)
     download_youtube_as_mp3(url, output_path)
