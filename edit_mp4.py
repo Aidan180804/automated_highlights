@@ -1,63 +1,72 @@
+import numpy as np
+from pydub import AudioSegment
+from pydub.utils import make_chunks
+import pandas as pd
 import os
-from moviepy.editor import VideoFileClip
-import subprocess
 
-input_video = input('enter path to mp4  file')
-output_dir = input('enter output directory:').strip('""')
-merged_dir = input('enter merged directory:').strip('""')
+def load_audio(file_path):
+    if file_path.lower().endswith('.mp3'):
+        audio = AudioSegment.from_mp3(file_path)
+    else:
+        raise ValueError("Unsupported file type")
+    return audio
 
-# extract highlight clips
-def extract_video_clips(input_video, output_dir, intervals):
-    os.makedirs(output_dir, exist_ok=True)
-    video = VideoFileClip(input_video.strip('""'))
-    for idx, row in intervals.iterrows():
-        start = row['start']
-        end = row['end']
-        clip = video.subclip(start, end)
-        output_filename = f'clip_{idx+1}_{start:.2f}-{end:.2f}.mp4'
-        output_path = os.path.join(output_dir, output_filename)
-        clip.write_videofile(output_path, codec='libx264')
-    video.close()
-    print('Complete!')
 
-# merge and rename highligts
-def merge_and_rename_highlights(output_dir, merged_dir):
-    """
-    Merges all mp4 files in output_dir into a single file in merged_dir, then renames it based on user input.
-    """
-    # List all mp4 files, sorted by name
-    mp4_files = [f for f in os.listdir(output_dir) if f.endswith('.mp4')]
-    mp4_files.sort()
+def get_loud_sections(audio, chunk_ms=100, interval_sec=5):
+    # Break audio into chunks
+    chunks = make_chunks(audio, chunk_ms)
+    volumes = np.array([chunk.dBFS for chunk in chunks])
+    # Filter out -inf (silent) values for mean/std calculation
+    valid_volumes = volumes[volumes != float('-inf')]
+    if len(valid_volumes) == 0:
+        print("Audio is completely silent.")
+        return []
+    mean_db = np.mean(valid_volumes)
+    std_db = np.std(valid_volumes)
+    # Define loud as mean + threshold_db or mean + 2*std
+    loud_threshold = mean_db + 1.5*std_db
+    loud_indices = np.where(volumes > loud_threshold)[0]
+    # Merge close indices
+    merged = []
+    for idx in loud_indices:
+        if not merged or idx > merged[-1][1] + 1:
+            merged.append([idx, idx])
+        else:
+            merged[-1][1] = idx
+    # Get intervals
+    intervals = []
+    for start_idx, end_idx in merged:
+        # Find the peak within this region
+        region_volumes = volumes[start_idx:end_idx+1]
+        # If all are -inf, skip
+        if np.all(region_volumes == float('-inf')):
+            continue
+        peak_idx = np.argmax(region_volumes) + start_idx
+        peak_time = peak_idx * chunk_ms / 1000.0
+        start_time = max(0, peak_time - interval_sec)
+        end_time = min(len(audio) / 1000.0, peak_time + interval_sec)
+        intervals.append((start_time, end_time))
+    # Merge overlapping intervals
+    if not intervals:
+        return []
+    # Sort intervals by start time
+    intervals.sort(key=lambda x: x[0])
+    merged_intervals = [intervals[0]]
+    for current in intervals[1:]:
+        last = merged_intervals[-1]
+        if current[0] <= last[1]:  # Overlap
+            merged_intervals[-1] = (last[0], max(last[1], current[1]))
+        else:
+            merged_intervals.append(current)
+    return merged_intervals
 
-    # Create a file list for ffmpeg
-    filelist_path = os.path.join(output_dir, 'filelist.txt')
-    with open(filelist_path, 'w', encoding='utf-8') as f:
-        for filename in mp4_files:
-         abs_path = os.path.abspath(os.path.join(output_dir, filename)).replace('\\', '/')
-         f.write(f"file '{abs_path}'\n")
-
-    
-    # Output file path
-    output_file = os.path.join(merged_dir, 'merged_output.mp4')
-
-    # Run ffmpeg to concatenate
-    subprocess.run([
-        'ffmpeg', '-f', 'concat', '-safe', '0', '-i', filelist_path, '-c', 'copy', output_file
-        ], check=True)
-
-    # Remove original mp4 files
-    for filename in mp4_files:
-        os.remove(os.path.join(output_dir, filename)) 
-
-    # Remove the filelist
-    if os.path.exists(filelist_path):
-        os.remove(filelist_path)
-
-    print(f"Merged file saved as: {output_file}")
-
-    new_name = input('enter highlights file name:').strip('""') + '.mp4'
-    os.rename(output_file,  os.path.join(merged_dir, new_name))
 
 if __name__ == "__main__":
-  extract_video_clips(input_video, output_dir, intervals)
-  merge_and_rename_highlights(output_dir, merged_dir)
+    file_path = input("Enter path to mp3 file: ").strip('""')
+    print(f"File path entered: '{file_path}'")
+    try:
+        audio = load_audio(file_path)
+        intervals = get_loud_sections(audio)
+        print("Loud intervals found:", intervals)
+    except Exception as e:
+        print("Error:", e)
