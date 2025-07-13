@@ -3,6 +3,7 @@ from loud_sections_from_mp3 import load_audio
 from loud_sections_from_mp3 import get_loud_sections
 import pandas as pd
 
+output_folder = input('enter path to output folder:').strip('""')
 file_path = input("Enter path to mp3 file: ").strip('""')
 print(f"File path entered: '{file_path}'")
 audio = load_audio(file_path)
