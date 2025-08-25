@@ -34,10 +34,10 @@ def download_youtube_as_mp3(url, output_path):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'keepvideo': True,  # <— prevents deleting the original
         'quiet': False,
         'noplaylist': True,
     }
-    
     with yt_dlp.YoutubeDL(ydl_opts_mp3) as ydl:
         ydl.download([url])
 
