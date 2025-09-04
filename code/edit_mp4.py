@@ -1,63 +1,80 @@
 import os
-from moviepy.editor import VideoFileClip
-import subprocess
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 
-# extract highlight clips
-def extract_video_clips(input_video, output_dir, intervals):
-    os.makedirs(output_dir, exist_ok=True)
-    video = VideoFileClip(input_video.strip('""'))
-    for idx, row in intervals.iterrows():
-        start = row['start']
-        end = row['end']
-        clip = video.subclip(start, end)
-        output_filename = f'clip_{idx+1}_{start:.2f}-{end:.2f}.mp4'
-        output_path = os.path.join(output_dir, output_filename)
-        clip.write_videofile(output_path, codec='libx264')
-    video.close()
-    print('Complete!')
-
-# merge and rename highligts
-def merge_and_rename_highlights(output_dir, merged_dir):
+def extract_and_merge_clips(input_video, intervals, output_file, padding=1.5, max_duration=480):
     """
-    Merges all mp4 files in output_dir into a single file in merged_dir, then renames it based on user input.
+    Extracts video clips based on provided intervals (list of [start, end])
+    and merges them into one final file.
+    Limits total merged video duration to `max_duration` seconds.
     """
-    # List all mp4 files, sorted by name
-    mp4_files = [f for f in os.listdir(output_dir) if f.endswith('.mp4')]
-    mp4_files.sort()
+    input_video = os.path.abspath(input_video.strip('"'))
 
-    # Create a file list for ffmpeg
-    filelist_path = os.path.join(output_dir, 'filelist.txt')
-    with open(filelist_path, 'w', encoding='utf-8') as f:
-        for filename in mp4_files:
-         abs_path = os.path.abspath(os.path.join(output_dir, filename)).replace('\\', '/')
-         f.write(f"file '{abs_path}'\n")
+    try:
+        video = VideoFileClip(input_video)
+    except Exception as e:
+        print(f"❌ Error loading video: {e}")
+        return
 
-    
-    # Output file path
-    output_file = os.path.join(merged_dir, 'merged_output.mp4')
+    total_duration = video.duration
+    print(f"🎥 Video duration: {total_duration:.2f}s")
 
-    # Run ffmpeg to concatenate
-    subprocess.run([
-        'ffmpeg', '-f', 'concat', '-safe', '0', '-i', filelist_path, '-c', 'copy', output_file
-        ], check=True)
+    # Sort intervals by start time
+    intervals = sorted(intervals, key=lambda x: x[0])
 
-    # Remove original mp4 files
-    for filename in mp4_files:
-        os.remove(os.path.join(output_dir, filename)) 
+    clips = []
+    current_total = 0.0
 
-    # Remove the filelist
-    if os.path.exists(filelist_path):
-        os.remove(filelist_path)
+    for idx, (start, end) in enumerate(intervals):
+        start = max(0, start - padding)
+        end = min(total_duration, end + padding)
 
-    print(f"Merged file saved as: {output_file}")
+        if start >= total_duration:
+            print(f"⚠️ Skipping clip {idx}: start time ({start:.2f}s) >= video duration.")
+            continue
 
-    new_name = input('enter highlights file name:').strip('""') + '.mp4'
-    os.rename(output_file,  os.path.join(merged_dir, new_name))
+        duration = end - start
+        if current_total + duration > max_duration:
+            # stop adding clips if total duration would exceed max_duration
+            break
 
+        try:
+            clip = video.subclip(start, end)
+            clips.append(clip)
+            current_total += duration
+        except Exception as e:
+            print(f"❌ Error processing clip {idx}: {e}")
+            continue
+
+        if current_total >= max_duration:
+            break
+
+    if not clips:
+        print("❌ No valid clips to merge.")
+        return
+
+    try:
+        final_clip = concatenate_videoclips(clips)
+        final_clip.write_videofile(output_file, codec='libx264', audio_codec='aac')
+        print(f"✅ Final highlight saved to: {output_file}")
+    except Exception as e:
+        print(f"❌ Error during merging: {e}")
+    finally:
+        video.close()
+
+
+# Optional CLI interface
 if __name__ == "__main__":
-    
-  input_video = input('enter path to mp4  file')
-  output_dir = input('enter output directory:').strip('""')
-  merged_dir = input('enter merged directory:').strip('""')
-  extract_video_clips(input_video, output_dir, intervals)
-  merge_and_rename_highlights(output_dir, merged_dir)
+    import sys
+    import pandas as pd
+
+    input_video = input("Enter path to MP4 file: ").strip('"')
+    output_file = input("Enter full path and name for the final merged highlight (e.g. highlights.mp4): ").strip('"')
+
+    try:
+        intervals_df = pd.read_csv("highlight_intervals.csv")
+        intervals = intervals_df[['start', 'end']].values.tolist()  # convert to list
+    except Exception as e:
+        print("❌ Failed to load intervals:", e)
+        sys.exit(1)
+
+    extract_and_merge_clips(input_video, intervals, output_file)
