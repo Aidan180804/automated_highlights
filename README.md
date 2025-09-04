@@ -1,5 +1,7 @@
 # Introduction
-The aim of this project is to provide an automated method to reliably and accurately produce highlights for sports broadcasting. The current method employed consists of filtering for loud volume spikes, theoretically corresponding to a 'key' moment in the match. Then, using ML speech recognition models, the audio is scanned for key words (e.g. goal, shot, foul).
+-The aim of this project is to provide an automated method to reliably and accurately produce highlights for sports broadcasting. 
+-Currently two distinct clip sorting functions: 1. loud section detection 2. key word recognition using ML speech recognition
+
 
 # Problem
 Sport highlights are still frequently manually edited by teams and leagues alike, especially among lower budget organisations. The potential for increasing the speed and efficiency of this process is something that can be exploited further than is currently being .
