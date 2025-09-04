@@ -1,7 +1,7 @@
 # Introduction
 -The aim of this project is to provide an automated method to reliably and accurately produce highlights for sports broadcasting. 
 
--Currently two distinct clip sorting functions: 
+-There are currently two functions used concurrently to select clips: 
   1. loud section detection
   2. key word recognition using ML speech recognition
 
