@@ -1,30 +1,79 @@
-# loud sections from mp3
-from loud_sections_from_mp3 import load_audio
-from loud_sections_from_mp3 import get_loud_sections
+import os
+import sys
 import pandas as pd
 
-output_folder = input('enter path to output folder:').strip('""')
-file_path = input("Enter path to mp3 file: ").strip('""')
-print(f"File path entered: '{file_path}'")
-audio = load_audio(file_path)
-intervals = get_loud_sections(audio)
-intervals = pd.DataFrame(intervals)
-intervals.rename(columns = {0 : 'start', 1 : 'end'}, inplace=True)
+# Step 1: Download YouTube Video
+output_folder = input("enter video folder path: ")
+# Step 2: Detect Loud Sections from Audio
+from loud_sections_from_mp3 import load_audio, get_loud_sections
+from speech_detection import detect_goal_speech
+
+# 🔍 Automatically detect the MP3 file instead of assuming a fixed name
+mp3_files = [f for f in os.listdir(output_folder) if f.lower().endswith(".mp3")]
+if not mp3_files:
+    print(f"❌ No .mp3 file found in folder: {output_folder}")
+    sys.exit(1)
+
+mp3_path = os.path.join(output_folder, mp3_files[0])
+print(f"📥 Using MP3 file: {mp3_path}")
+
+try:
+    audio = load_audio(mp3_path)
+    loud_intervals = get_loud_sections(audio)  # list of [start, end]
+
+    if not loud_intervals:
+        print("⚠️ No loud intervals found. Exiting.")
+        sys.exit(1)
+
+    # Save loud-only intervals to CSV for debugging
+    pd.DataFrame(loud_intervals, columns=["start", "end"]).to_csv(
+        os.path.join(output_folder, "loud_intervals.csv"), index=False
+    )
+except Exception as e:
+    print(f"❌ Error during loud section detection: {e}")
+    sys.exit(1)
 
 
-# edit mp4
-from edit_mp4  import extract_video_clips
-from edit_mp4 import merge_and_rename_highlights
-import sys
+# Step 2b: Speech detection
+speech_intervals = detect_goal_speech(mp3_path)  # list of [start, end]
 
-input_video = input('enter path to mp4  file')
-output_dir = input('enter different folder directory:').strip('""')
-merged_dir = output_folder
-if output_dir == merged_dir:
-   print("Output directory and merged directory cannot be the same. Exiting program.")
-   sys.exit()
-else:
-    print("Directories are valid. Continuing with processing...")
+# Combine and sort intervals
+all_intervals = loud_intervals + speech_intervals
+all_intervals = sorted(all_intervals, key=lambda x: x[0])
 
-extract_video_clips(input_video, output_dir, intervals)
-merge_and_rename_highlights(output_dir, merged_dir)
+# Merge overlapping intervals
+def merge_intervals(intervals, gap=1.0):
+    merged = []
+    for start, end in intervals:
+        if not merged or start > merged[-1][1] + gap:
+            merged.append([start, end])
+        else:
+            merged[-1][1] = max(merged[-1][1], end)
+    return merged
+
+final_intervals = merge_intervals(all_intervals)
+
+# Save merged intervals
+pd.DataFrame(final_intervals, columns=["start", "end"]).to_csv(
+    os.path.join(output_folder, "highlight_intervals.csv"), index=False
+)
+
+
+# Step 3: Extract & Merge Highlights from MP4
+from edit_mp4 import extract_and_merge_clips
+
+# 🔍 Automatically detect the MP4 file
+mp4_files = [f for f in os.listdir(output_folder) if f.lower().endswith(".mp4")]
+if not mp4_files:
+    print(f"⚠️ No MP4 files found to merge in: {output_folder}")
+    sys.exit(1)
+
+mp4_path = os.path.join(output_folder, mp4_files[0])
+print(f"🎥 Using MP4 file: {mp4_path}")
+
+
+# Define final output path
+output_file = os.path.join(output_folder, "highlights_final.mp4")
+
+# Run extraction and merging
+extract_and_merge_clips(mp4_path, final_intervals, output_file)
