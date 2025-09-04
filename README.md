@@ -9,7 +9,7 @@
 # Problem
 Sport highlights are still frequently manually edited by teams and leagues alike, especially among lower budget organisations. Increasing the speed and efficiency of this process is something that was identified as a potential software development project, even potentially leading to an entreprenuerial opportunity moving forward. 
 
-# Solution
+# Technical approach
 Through the development of a software application that can process a full event video + audio file and output a ready-made highlight video. The application in its current state utilises a function to isolate loud points within the audio file and form clips starting 4 seconds before and after these points.  
 
 # File breakdown
